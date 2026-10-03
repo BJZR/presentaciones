@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Presentador</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;700&display=swap">
+<style>
+<!--CSS-->
+</style>
+</head>
+<body>
+<header>
+  <input id="tit" aria-label="Título" spellcheck="false">
+  <nav>
+    <button data-c="nuevoTxt">Texto</button>
+    <button data-c="rect">Rectángulo</button>
+    <button data-c="elip">Elipse</button>
+    <button data-c="img">Imagen</button>
+    <span class="sep"></span>
+    <button data-c="deshacer">Deshacer</button>
+    <button data-c="rehacer">Rehacer</button>
+    <span class="sep"></span>
+    <button data-c="abrir">Abrir</button>
+    <button data-c="guardaArchivo">Guardar</button>
+  </nav>
+  <button class="go" data-c="presenta">Presentar (F5)</button>
+</header>
+<main>
+  <aside id="izq">
+    <div id="acc">
+      <button data-c="nueva">Nueva</button>
+      <button data-c="duplica">Duplicar</button>
+      <button data-c="borra">Borrar</button>
+    </div>
+    <div id="minis"></div>
+  </aside>
+  <section id="centro"><div class="lz" id="lz"></div></section>
+  <aside id="der"><div id="props"></div></aside>
+</main>
+<div id="pres" hidden>
+  <div id="pv"></div>
+  <div id="hud"><span id="reloj"></span><span id="cnt"></span></div>
+  <div id="barra"></div>
+</div>
+<input type="file" id="fimg" accept="image/*" hidden>
+<input type="file" id="fabr" accept=".json" hidden>
+<script>
+<!--JS-->
+</script>
+</body>
+</html>

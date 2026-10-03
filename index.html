@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Presentador</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;700&display=swap">
+<style>
+:root{--bg:#d9dde3;--pan:#eef0f3;--ink:#1b2430;--line:#c3c9d2;--ui:#2f4bff;font-family:'Bricolage Grotesque',system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink)}
+body{display:grid;grid-template-rows:52px 1fr}
+header{display:flex;align-items:center;gap:12px;padding:0 12px;background:var(--pan);border-bottom:1px solid var(--line)}
+nav{display:flex;gap:4px;align-items:center;flex:1;overflow-x:auto}
+#tit{font:inherit;font-weight:700;border:0;background:none;width:11em;padding:6px;border-radius:6px;color:inherit}
+#tit:hover,#tit:focus{background:#fff}
+button,select{font:inherit;font-size:.85rem;padding:6px 10px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;color:inherit;white-space:nowrap}
+button:hover{border-color:var(--ui)}
+:focus-visible{outline:2px solid var(--ui);outline-offset:2px}
+button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.go{background:var(--ui);color:#fff;border-color:var(--ui);font-weight:700}
+.sep{width:1px;height:20px;background:var(--line);margin:0 6px}
+main{display:grid;grid-template-columns:190px 1fr 230px;min-height:0}
+aside{background:var(--pan);overflow:auto;padding:10px}
+#izq{border-right:1px solid var(--line)}
+#der{border-left:1px solid var(--line)}
+#acc{display:flex;gap:4px;margin-bottom:10px}
+#acc button{padding:5px 6px;font-size:.75rem}
+#centro{display:grid;place-items:center;padding:20px;min-width:0;min-height:0}
+.lz{width:min(100%,calc((100vh - 92px)*16/9));aspect-ratio:16/9;box-shadow:0 6px 28px #1b243033}
+.lz,.th{position:relative;overflow:hidden}
+.capa{position:absolute;inset:0;overflow:hidden}
+.mini{display:grid;grid-template-columns:18px 1fr;gap:4px;padding:6px 4px;border-radius:8px;cursor:pointer}
+.mini.on{background:#fff;outline:2px solid var(--ui)}
+.mini span{font-size:.7rem;opacity:.6}
+.th{aspect-ratio:16/9;width:100%;pointer-events:none;box-shadow:0 0 0 1px var(--line)}
+h3{font-size:.8rem;margin:14px 0 6px}
+h3:first-child{margin-top:0}
+.fila{display:flex;gap:4px;flex-wrap:wrap}
+label{display:grid;gap:4px;font-size:.85rem;margin:8px 0}
+input[type=range]{width:100%}
+input[type=color]{width:100%;height:32px;padding:0;border:1px solid var(--line);border-radius:6px}
+.sw{width:44px;height:30px;background:linear-gradient(90deg,var(--bg) 70%,var(--ac) 70%)}
+.sw.on{outline:2px solid var(--ui);outline-offset:2px}
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform:scale(var(--k,.3));transform-origin:0 0;color:var(--fg)}
+.el{position:absolute;white-space:pre-wrap;line-height:1.2;overflow-wrap:anywhere}
+.lz .el{cursor:move}
+.el.txt:focus{outline:3px dashed var(--ui);cursor:text}
+.el.sel{outline:3px solid var(--ui);outline-offset:4px}
+.el img{width:100%;height:100%;display:block;pointer-events:none}
+.mj{position:absolute;right:-18px;bottom:-18px;width:22px;height:22px;background:#fff;border:3px solid var(--ui);cursor:nwse-resize}
+.gv,.gh{position:absolute;background:#ff2d78;display:none;pointer-events:none}
+.gv{left:639px;top:0;width:2px;height:100%}
+.gh{top:359px;left:0;height:2px;width:100%}
+.cv .gv,.ch .gh{display:block}
+#pres{position:fixed;inset:0;background:#000;display:grid;place-items:center;z-index:9;cursor:none}
+#pres[hidden]{display:none}
+#pv{position:relative;width:min(100vw,calc(100vh*16/9));aspect-ratio:16/9;overflow:hidden}
+#hud{position:fixed;right:14px;bottom:10px;color:#fff9;font-size:.8rem;font-variant-numeric:tabular-nums;display:flex;gap:14px}
+#barra{position:fixed;left:0;bottom:0;height:3px;background:var(--ui);transition:width .3s}
+@media (max-width:900px){
+  main{grid-template-columns:1fr;overflow:auto}
+  #izq,#der{border:0}
+  #minis{display:flex;gap:8px;overflow-x:auto}
+  .mini{min-width:130px}
+  #centro{order:-1}
+  .lz{width:100%}
+}
+</style>
+</head>
+<body>
+<header>
+  <input id="tit" aria-label="Título" spellcheck="false">
+  <nav>
+    <button data-c="nuevoTxt">Texto</button>
+    <button data-c="rect">Rectángulo</button>
+    <button data-c="elip">Elipse</button>
+    <button data-c="img">Imagen</button>
+    <span class="sep"></span>
+    <button data-c="deshacer">Deshacer</button>
+    <button data-c="rehacer">Rehacer</button>
+    <span class="sep"></span>
+    <button data-c="abrir">Abrir</button>
+    <button data-c="guardaArchivo">Guardar</button>
+  </nav>
+  <button class="go" data-c="presenta">Presentar (F5)</button>
+</header>
+<main>
+  <aside id="izq">
+    <div id="acc">
+      <button data-c="nueva">Nueva</button>
+      <button data-c="duplica">Duplicar</button>
+      <button data-c="borra">Borrar</button>
+    </div>
+    <div id="minis"></div>
+  </aside>
+  <section id="centro"><div class="lz" id="lz"></div></section>
+  <aside id="der"><div id="props"></div></aside>
+</main>
+<div id="pres" hidden>
+  <div id="pv"></div>
+  <div id="hud"><span id="reloj"></span><span id="cnt"></span></div>
+  <div id="barra"></div>
+</div>
+<input type="file" id="fimg" accept="image/*" hidden>
+<input type="file" id="fabr" accept=".json" hidden>
+<script>
+// estado global, temas y deshacer
+const W = 1280, H = 720, KEY = 'presentador';
+const TEMAS = {
+  tinta:  { bg: '#fbfbf9', fg: '#1b2430', ac: '#2f4bff' },
+  noche:  { bg: '#0e1a3a', fg: '#eef1fb', ac: '#ffb000' },
+  salvia: { bg: '#cfdccb', fg: '#16301f', ac: '#c2410c' },
+};
+let D, LZ, CUR = 0, SEL = null, HIST = [], FUT = [];
+
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 8);
+const diap = () => D.diaps[CUR];
+const elSel = () => diap().els.find(e => e.id === SEL);
+const nuevaDiap = tema => ({ id: uid(), tema: tema || 'tinta', els: [] });
+
+const txt = (t, y, sz, peso) =>
+  ({ id: uid(), t: 'txt', x: 100, y, w: 1080, txt: t, sz, peso, al: 'left', col: null });
+
+// documento inicial
+function inicio() {
+  const d = nuevaDiap();
+  d.els.push(
+    { id: uid(), t: 'forma', forma: 'rect', x: 100, y: 200, w: 120, h: 12, fill: null },
+    txt('Título de la presentación', 240, 88, 700),
+    txt('Doble clic para editar', 380, 40, 400));
+  return { titulo: 'Sin título', trans: 'fade', diaps: [d] };
+}
+
+// guarda copia antes de un cambio
+function snap() {
+  HIST.push(JSON.stringify(D));
+  if (HIST.length > 60) HIST.shift();
+  FUT = [];
+}
+
+function restaura(de, a) {
+  if (!de.length) return;
+  a.push(JSON.stringify(D));
+  D = JSON.parse(de.pop());
+  CUR = Math.min(CUR, D.diaps.length - 1);
+  SEL = null;
+  todo();
+}
+const deshacer = () => restaura(HIST, FUT);
+const rehacer = () => restaura(FUT, HIST);
+
+// autoguardado local
+function guarda() { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} }
+function carga() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } }
+// dibuja diapositivas: editor, miniatura y presentación
+const ajusta = h => {
+  h.style.setProperty('--k', h.clientWidth / W);
+  h.querySelectorAll('.capa').forEach(c => c.style.setProperty('--k', c.clientWidth / W));
+};
+const observa = h => new ResizeObserver(() => ajusta(h)).observe(h);
+
+function pinta(d, host, ed) {
+  const t = TEMAS[d.tema];
+  const st = document.createElement('div');
+  st.className = 'stage';
+  st.style.cssText = `--fg:${t.fg};--ac:${t.ac}`;
+  if (ed) st.innerHTML = '<b class="gv"></b><b class="gh"></b>';
+  d.els.forEach(e => st.append(nodo(e, ed)));
+  host.style.background = t.bg;
+  host.replaceChildren(st);
+  ajusta(host);
+  return st;
+}
+
+function nodo(e, ed) {
+  const n = document.createElement('div');
+  n.className = 'el ' + e.t;
+  n.dataset.id = e.id;
+  n.style.cssText = `left:${e.x}px;top:${e.y}px;width:${e.w}px;` + (e.t === 'txt' ? '' : `height:${e.h}px;`);
+  if (e.t === 'txt') {
+    n.textContent = e.txt;
+    Object.assign(n.style, { fontSize: e.sz + 'px', fontWeight: e.peso, textAlign: e.al, color: e.col || 'var(--fg)' });
+  } else if (e.t === 'img') {
+    n.innerHTML = `<img src="${e.src}" alt="">`;
+  } else {
+    n.style.background = e.fill || 'var(--ac)';
+    if (e.forma === 'elip') n.style.borderRadius = '50%';
+  }
+  if (ed && e.id === SEL) {
+    n.classList.add('sel');
+    n.insertAdjacentHTML('beforeend', '<i class="mj"></i>');
+  }
+  return n;
+}
+
+const lienzo = () => pinta(diap(), LZ, true);
+
+// arrastrar, redimensionar y alinear al centro
+function down(ev) {
+  const act = document.activeElement;
+  if (act && act.isContentEditable) act.blur();
+  const n = ev.target.closest('.el');
+  if (!n) { SEL = null; return todo(); }
+  if (n.isContentEditable) return;
+  const id = n.dataset.id, mj = ev.target.classList.contains('mj');
+  if (SEL !== id) { SEL = id; lienzo(); props(); }
+  const e = elSel(), nn = LZ.querySelector(`[data-id="${id}"]`), st = nn.parentNode;
+  const k = LZ.clientWidth / W, x0 = ev.clientX, y0 = ev.clientY, o = { ...e };
+  let mv = false;
+  const mueve = m => {
+    if (!mv) { snap(); mv = true; }
+    const dx = (m.clientX - x0) / k, dy = (m.clientY - y0) / k;
+    if (mj) {
+      e.w = Math.max(40, Math.round(o.w + dx));
+      if (e.t !== 'txt') e.h = Math.max(40, Math.round(o.h + dy));
+    } else {
+      e.x = Math.round(o.x + dx);
+      e.y = Math.round(o.y + dy);
+    }
+    const cv = !mj && Math.abs(e.x + nn.offsetWidth / 2 - W / 2) < 8;
+    const ch = !mj && Math.abs(e.y + nn.offsetHeight / 2 - H / 2) < 8;
+    if (cv) e.x = Math.round(W / 2 - nn.offsetWidth / 2);
+    if (ch) e.y = Math.round(H / 2 - nn.offsetHeight / 2);
+    st.classList.toggle('cv', cv);
+    st.classList.toggle('ch', ch);
+    Object.assign(nn.style, { left: e.x + 'px', top: e.y + 'px', width: e.w + 'px' });
+    if (e.t !== 'txt') nn.style.height = e.h + 'px';
+  };
+  const fin = () => {
+    removeEventListener('pointermove', mueve);
+    removeEventListener('pointerup', fin);
+    if (mv) todo();
+  };
+  addEventListener('pointermove', mueve);
+  addEventListener('pointerup', fin);
+}
+
+// editar texto con doble clic
+function edita(ev) {
+  const n = ev.target.closest('.el.txt');
+  if (!n) return;
+  n.querySelector('.mj')?.remove();
+  try { n.contentEditable = 'plaintext-only'; } catch (x) { n.contentEditable = 'true'; }
+  n.focus();
+  n.onkeydown = k => k.key === 'Escape' && n.blur();
+  n.onblur = () => {
+    const e = diap().els.find(x => x.id === n.dataset.id), v = n.innerText.replace(/\n$/, '');
+    if (e && v !== e.txt) { snap(); e.txt = v; }
+    todo();
+  };
+}
+// lista de miniaturas y operaciones sobre diapositivas
+function minis() {
+  const L = $('#minis');
+  L.replaceChildren();
+  D.diaps.forEach((d, i) => {
+    const m = document.createElement('div');
+    m.className = 'mini' + (i === CUR ? ' on' : '');
+    m.draggable = true;
+    m.innerHTML = `<span>${i + 1}</span><div class="th"></div>`;
+    L.append(m);
+    pinta(d, m.querySelector('.th'), false);
+    m.onclick = () => { CUR = i; SEL = null; todo(); };
+    m.ondragstart = e => e.dataTransfer.setData('text', i);
+    m.ondragover = e => e.preventDefault();
+    m.ondrop = e => muevDiap(+e.dataTransfer.getData('text'), i);
+  });
+}
+
+function muevDiap(a, b) {
+  if (a === b) return;
+  snap();
+  D.diaps.splice(b, 0, D.diaps.splice(a, 1)[0]);
+  CUR = b;
+  todo();
+}
+
+function nueva() {
+  snap();
+  D.diaps.splice(++CUR, 0, nuevaDiap(D.diaps[CUR - 1].tema));
+  SEL = null;
+  todo();
+}
+
+function duplica() {
+  snap();
+  const c = JSON.parse(JSON.stringify(diap()));
+  c.id = uid();
+  c.els.forEach(e => e.id = uid());
+  D.diaps.splice(++CUR, 0, c);
+  SEL = null;
+  todo();
+}
+
+function borra() {
+  if (D.diaps.length < 2) return;
+  snap();
+  D.diaps.splice(CUR, 1);
+  CUR = Math.min(CUR, D.diaps.length - 1);
+  SEL = null;
+  todo();
+}
+// crea elementos en la diapositiva actual
+function mete(e) {
+  snap();
+  e.id = uid();
+  diap().els.push(e);
+  SEL = e.id;
+  todo();
+}
+
+const nuevoTxt = () =>
+  mete({ t: 'txt', x: 140, y: 280, w: 700, txt: 'Nuevo texto', sz: 48, peso: 400, al: 'left', col: null });
+
+const nuevaForma = f =>
+  mete({ t: 'forma', forma: f, x: 480, y: 210, w: 320, h: f === 'elip' ? 320 : 200, fill: null });
+
+// reduce la imagen para que quepa en el autoguardado
+function nuevaImg(file) {
+  const r = new FileReader();
+  r.onload = () => {
+    const im = new Image();
+    im.onload = () => {
+      const m = Math.min(1, 1200 / im.width), c = document.createElement('canvas');
+      c.width = im.width * m;
+      c.height = im.height * m;
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      const w = Math.min(640, c.width), h = w * c.height / c.width;
+      mete({ t: 'img', src: c.toDataURL('image/webp', .85), x: (W - w) / 2, y: (H - h) / 2, w, h });
+    };
+    im.src = r.result;
+  };
+  r.readAsDataURL(file);
+}
+// panel de propiedades y acciones sobre el elemento
+const OBJ = o => ({ e: elSel(), s: diap(), d: D })[o];
+const TRANS_NOM = [['fade', 'Fundido'], ['slide', 'Deslizar'], ['zoom', 'Zoom']];
+const AL_NOM = { left: 'Izq', center: 'Centro', right: 'Der' };
+const btn = (o, k, v, t, on) =>
+  `<button data-o="${o}" data-k="${k}" data-v="${v}"${on ? ' class="on"' : ''}>${t}</button>`;
+
+function props() {
+  const e = elSel();
+  $('#props').innerHTML = e ? panelEl(e) : panelDiap();
+}
+
+function panelDiap() {
+  const sw = Object.keys(TEMAS).map(k =>
+    `<button class="sw${diap().tema === k ? ' on' : ''}" data-o="s" data-k="tema" data-v="${k}" title="${k}"
+      style="--bg:${TEMAS[k].bg};--ac:${TEMAS[k].ac}"></button>`).join('');
+  const op = TRANS_NOM.map(([v, n]) => `<option value="${v}"${D.trans === v ? ' selected' : ''}>${n}</option>`).join('');
+  return `<h3>Tema</h3><div class="fila">${sw}</div>
+    <h3>Transición</h3><select data-o="d" data-k="trans">${op}</select>`;
+}
+
+function panelEl(e) {
+  const tema = TEMAS[diap().tema];
+  const color = (k, n, v) => `<label>${n}<input type="color" data-o="e" data-k="${k}" value="${v}"></label>`;
+  let h = `<h3>${{ txt: 'Texto', img: 'Imagen', forma: 'Forma' }[e.t]}</h3>`;
+  if (e.t === 'txt') {
+    h += `<label>Tamaño<input type="range" data-o="e" data-k="sz" min="16" max="200" value="${e.sz}"></label>
+      <div class="fila">${btn('e', 'peso', 400, 'Normal', e.peso == 400)}${btn('e', 'peso', 700, 'Negrita', e.peso == 700)}</div>
+      <div class="fila" style="margin-top:6px">${Object.keys(AL_NOM).map(a => btn('e', 'al', a, AL_NOM[a], e.al === a)).join('')}</div>`
+      + color('col', 'Color', e.col || tema.fg);
+  }
+  if (e.t === 'forma') h += color('fill', 'Relleno', e.fill || tema.ac);
+  const acc = [['frente', 'Al frente'], ['fondo', 'Al fondo'], ['dup', 'Duplicar'], ['del', 'Borrar']];
+  return h + '<h3>Orden</h3><div class="fila">' + acc.map(([a, t]) => `<button data-a="${a}">${t}</button>`).join('') + '</div>';
+}
+
+// cambios con deslizador y color: una sola copia por interacción
+let TX = false;
+function entrada(ev) {
+  const t = ev.target, o = OBJ(t.dataset.o);
+  if (!o || !t.dataset.k) return;
+  if (!TX) { snap(); TX = true; }
+  o[t.dataset.k] = t.type === 'range' ? +t.value : t.value;
+  lienzo();
+}
+const cambio = () => { TX = false; todo(); };
+
+function clic(ev) {
+  const b = ev.target.closest('button');
+  if (!b) return;
+  const d = b.dataset;
+  if (d.a) return ACC[d.a]();
+  snap();
+  OBJ(d.o)[d.k] = isNaN(d.v) ? d.v : +d.v;
+  todo();
+}
+
+// reordena capas
+function capa(fn) {
+  const e = elSel();
+  if (!e) return;
+  snap();
+  const a = diap().els;
+  a.splice(a.indexOf(e), 1);
+  fn(a, e);
+  todo();
+}
+
+const ACC = {
+  frente: () => capa((a, e) => a.push(e)),
+  fondo: () => capa((a, e) => a.unshift(e)),
+  dup() {
+    const e = elSel();
+    if (!e) return;
+    snap();
+    const c = { ...e, id: uid(), x: e.x + 30, y: e.y + 30 };
+    diap().els.push(c);
+    SEL = c.id;
+    todo();
+  },
+  del() {
+    if (!elSel()) return;
+    snap();
+    diap().els = diap().els.filter(e => e.id !== SEL);
+    SEL = null;
+    todo();
+  },
+};
+// modo presentación
+const TRANS = {
+  fade: () => [{ opacity: 0 }, { opacity: 1 }],
+  slide: d => [{ transform: `translateX(${d * 100}%)` }, { transform: 'none' }],
+  zoom: () => [{ opacity: 0, transform: 'scale(.92)' }, { opacity: 1, transform: 'none' }],
+};
+let PI = 0, T0 = 0, TM = 0;
+
+// muestra la diapositiva i; dir = -1, 0 o 1
+function va(i, dir) {
+  PI = Math.max(0, Math.min(D.diaps.length - 1, i));
+  const host = $('#pv'), c = document.createElement('div');
+  c.className = 'capa';
+  host.append(c);
+  pinta(D.diaps[PI], c, false);
+  const rapido = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  c.animate((TRANS[D.trans] || TRANS.fade)(dir), { duration: rapido ? 0 : 380, easing: 'ease-out' })
+    .onfinish = () => [...host.children].forEach(x => x !== c && x.remove());
+  $('#cnt').textContent = `${PI + 1} / ${D.diaps.length}`;
+  $('#barra').style.width = (PI + 1) / D.diaps.length * 100 + '%';
+}
+
+function reloj() {
+  const s = Math.floor((Date.now() - T0) / 1000), p = n => String(n).padStart(2, '0');
+  $('#reloj').textContent = p(Math.floor(s / 60)) + ':' + p(s % 60);
+}
+
+function presenta() {
+  $('#pres').hidden = false;
+  $('#pv').replaceChildren();
+  T0 = Date.now();
+  reloj();
+  TM = setInterval(reloj, 1000);
+  document.documentElement.requestFullscreen?.().catch(() => {});
+  va(CUR, 0);
+}
+
+function sale() {
+  if ($('#pres').hidden) return;
+  $('#pres').hidden = true;
+  clearInterval(TM);
+  if (document.fullscreenElement) document.exitFullscreen();
+  CUR = PI;
+  SEL = null;
+  todo();
+}
+
+function tecPres(ev) {
+  const k = ev.key;
+  if ([' ', 'ArrowRight', 'PageDown', 'Enter'].includes(k)) va(PI + 1, 1);
+  else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(k)) va(PI - 1, -1);
+  else if (k === 'Escape') sale();
+  else return;
+  ev.preventDefault();
+}
+// guardar y abrir presentaciones .json
+function guardaArchivo() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(D)], { type: 'application/json' }));
+  a.download = (D.titulo || 'presentacion') + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function abreArchivo(f) {
+  f.text().then(t => {
+    try {
+      const n = JSON.parse(t);
+      if (!Array.isArray(n.diaps) || !n.diaps.length) throw 0;
+      snap();
+      D = n;
+      CUR = 0;
+      SEL = null;
+      todo();
+    } catch (e) { alert('Archivo no válido'); }
+  });
+}
+// arranque, comandos y atajos
+function todo() {
+  lienzo();
+  minis();
+  props();
+  $('#tit').value = D.titulo;
+  guarda();
+}
+
+const CMD = {
+  nuevoTxt, deshacer, rehacer, presenta, guardaArchivo, nueva, duplica, borra,
+  rect: () => nuevaForma('rect'),
+  elip: () => nuevaForma('elip'),
+  img: () => $('#fimg').click(),
+  abrir: () => $('#fabr').click(),
+};
+
+function atajos(ev) {
+  if (!$('#pres').hidden) return tecPres(ev);
+  const t = ev.target, c = ev.ctrlKey || ev.metaKey, k = ev.key.toLowerCase();
+  if (t.isContentEditable || /INPUT|SELECT/.test(t.tagName)) return;
+  if (c && k === 'z') ev.shiftKey ? rehacer() : deshacer();
+  else if (c && k === 'y') rehacer();
+  else if (c && k === 'd') ACC.dup();
+  else if (k === 'delete' || k === 'backspace') ACC.del();
+  else if (k === 'f5') presenta();
+  else return;
+  ev.preventDefault();
+}
+
+D = carga() || inicio();
+LZ = $('#lz');
+observa(LZ);
+observa($('#pv'));
+LZ.onpointerdown = down;
+LZ.ondblclick = edita;
+$('#props').oninput = entrada;
+$('#props').onchange = cambio;
+$('#props').onclick = clic;
+$('#tit').oninput = e => { D.titulo = e.target.value; guarda(); };
+$('#pres').onclick = () => va(PI + 1, 1);
+$('#fimg').onchange = e => { e.target.files[0] && nuevaImg(e.target.files[0]); e.target.value = ''; };
+$('#fabr').onchange = e => { e.target.files[0] && abreArchivo(e.target.files[0]); e.target.value = ''; };
+document.addEventListener('click', e => { const c = e.target.closest('[data-c]'); if (c) CMD[c.dataset.c](); });
+document.addEventListener('keydown', atajos);
+document.addEventListener('fullscreenchange', () => document.fullscreenElement || sale());
+todo();
+</script>
+</body>
+</html>
